@@ -9,9 +9,9 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
+    "verbatimModuleSyntax": false,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
