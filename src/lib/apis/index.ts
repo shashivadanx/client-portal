@@ -2,16 +2,19 @@ import axios from "axios";
 import { env } from "../env";
 
 const apiClient = axios.create({
-  baseURL: env.VITE_API_BASE_URL,
+  baseURL: env.urls.baseUrl,
 });
 
 apiClient.interceptors.request.use(
   async (config) => {
+    const token =
+      "eyJhbGciOiJSUzI1NiIsImtpZCI6ImU4MWYwNTJhZWYwNDBhOTdjMzlkMjY1MzgxZGU2Y2I0MzRiYzM1ZjMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiU2hhc2hpdmFkYW4gVGhvdGEiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS2k1Y3FNVGpWbVd2NlBPOW4wa3hndFRncWJVZkFBamlmdXNGdGpkeWtoM3Q2UG8zYz1zOTYtYyIsIm9yZ19pZCI6Im5HdVhRVUYyeVJjRU1UMkdMb29aIiwicm9sZSI6ImFkbWluIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2FsZ29oaXJlLXRlc3QiLCJhdWQiOiJhbGdvaGlyZS10ZXN0IiwiYXV0aF90aW1lIjoxNzYwMDAyODk0LCJ1c2VyX2lkIjoiSTBNTkJWVUlUclQyaTVHWlVwNEZkSlByUGROMiIsInN1YiI6IkkwTU5CVlVJVHJUMmk1R1pVcDRGZEpQclBkTjIiLCJpYXQiOjE3NjAwMDI4OTQsImV4cCI6MTc2MDAwNjQ5NCwiZW1haWwiOiJzaGFzaGlAYWxnb2hpcmUuYWkiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMDM2OTgzMDEyNDg3MDEwMTc5OCJdLCJlbWFpbCI6WyJzaGFzaGlAYWxnb2hpcmUuYWkiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJjdXN0b20ifX0.ZhMTsCcauyoqHOM0flyTegp44BSHKhwn777oAHlJWPoAC44AtXMtA5CcCYXjvkmFU7OFx178asYl1jJdX_3ntnfUCueQCBfRsDZCfOYjfsOL5HVHcZxxV3Hk3y-8_CkviIIOkcKp9fSsnI4smyXLFiO9TFFOFSbJzGAxvkUwIr3knM46XfGN_ArPu808QK8V74Ak2YuhRAzRZ_xNs8d65bbmqK5gJwpYyODvejoFWhGE1dZ__ZZpSCVaPSpHWTxNA9w7WOlzrwjSFi2df_XT6ObojqUC4N5F_LuDhLV2_3kxp93VSn-YmuRhO6yKSpR_E86lB8_I97t1ay_nm4RA3Q";
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
- 
+
 export default apiClient;
