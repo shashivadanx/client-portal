@@ -11,10 +11,16 @@ import {
   MessageSquare,
   Star,
   StarOff,
+  Calendar,
+  CheckCircle,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface FeedbackData {
   submission_id: string;
@@ -24,6 +30,7 @@ interface FeedbackData {
   rating?: number;
   created_at: string;
   updated_at: string;
+  status?: string;
   client_contact_name: string;
 }
 
@@ -53,7 +60,7 @@ export function FeedbackHistoryCard() {
     queryKey: ["client-feedback-history", submissionId, currentPage, limit],
     queryFn: () =>
       api.get<FeedbackResponse>(
-        `/recruiter/clients-portal/feedback-history/${submissionId}`,
+        `/client/submissions/feedback-history/${submissionId}`,
         { params: { page: currentPage, limit } }
       ),
   });
@@ -80,7 +87,7 @@ export function FeedbackHistoryCard() {
     for (let i = 1; i <= 5; i++) {
       if (i <= rating)
         stars.push(
-          <Star key={i} className="h-4 w-4 fill-current text-yellow-300" />
+          <Star key={i} className="h-4 w-4 fill-current text-yellow-400" />
         );
       else
         stars.push(
@@ -90,12 +97,62 @@ export function FeedbackHistoryCard() {
     return stars;
   };
 
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null;
+
+    const statusConfig = {
+      approved: {
+        label: "Approved",
+        variant: "default" as const,
+        icon: <CheckCircle className="h-3 w-3 mr-1" />,
+        className: "bg-green-100 text-green-800 hover:bg-green-100",
+      },
+      pending: {
+        label: "Pending",
+        variant: "secondary" as const,
+        icon: <Clock className="h-3 w-3 mr-1" />,
+        className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+      },
+      rejected: {
+        label: "Rejected",
+        variant: "destructive" as const,
+        icon: <XCircle className="h-3 w-3 mr-1" />,
+        className: "bg-red-100 text-red-800 hover:bg-red-100",
+      },
+    };
+
+    const config = statusConfig[
+      status.toLowerCase() as keyof typeof statusConfig
+    ] || {
+      label: status,
+      variant: "outline" as const,
+      icon: null,
+      className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+    };
+
+    return (
+      <Badge className={`flex items-center ${config.className}`}>
+        {config.icon}
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <div>
       {isLoading && (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
           ))}
         </div>
       )}
@@ -134,28 +191,48 @@ export function FeedbackHistoryCard() {
             feedbackHistory.map((fb) => (
               <Card
                 key={fb.submission_id}
-                className="border border-gray-200 bg-white p-3 shadow-none"
+                className="border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col gap-4">
-                  {/* Rating */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-500">
-                        Rating:
-                      </span>
-                      <div className="flex">{renderStars(fb.rating)}</div>
+                  {/* Header with client info and status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 bg-slate-100">
+                        <AvatarImage src="" alt={fb.client_contact_name} />
+                        <AvatarFallback className="text-slate-600 font-medium">
+                          {getInitials(fb.client_contact_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-gray-900">
+                            {fb.client_contact_name}
+                          </h3>
+                          {getStatusBadge(fb.status)}
+                        </div>
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(fb.created_at)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                      {formatDate(fb.created_at)}
+                    <div className="flex items-center gap-1">
+                      {renderStars(fb.rating)}
+                      <span className="ml-1 text-sm text-gray-500">
+                        {fb.rating || 0}/5
+                      </span>
                     </div>
                   </div>
 
                   {/* Feedback Content */}
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-gray-500">
-                      Feedback:
-                    </span>
-                    <p className="whitespace-pre-wrap text-wrap rounded-md border bg-slate-200/30 p-2 text-sm leading-relaxed text-gray-700">
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageSquare className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm font-medium text-slate-700">
+                        Feedback
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {fb.content}
                     </p>
                   </div>
@@ -166,10 +243,10 @@ export function FeedbackHistoryCard() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between border-t pt-4">
+            <div className="mt-6 flex items-center justify-between border-t pt-4">
               <div className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages} ({pagination?.total}{" "}
-                feedbacks)
+                Page {currentPage} of {totalPages} ({pagination?.total} feedback
+                {pagination?.total !== 1 ? "s" : ""})
               </div>
               <div className="flex gap-2">
                 <Button

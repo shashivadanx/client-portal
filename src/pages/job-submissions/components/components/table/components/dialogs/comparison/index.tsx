@@ -74,9 +74,7 @@ export default function ComparisonDialog() {
   const { data, isLoading, isError, error } = useQuery({
     queryFn: () =>
       api.get<ApiResponse>(
-        `/recruiter/clients-portal/submissions/multiple?ids=${submissionsIds.join(
-          ","
-        )}`
+        `/client/submissions/multiple?ids=${submissionsIds.join(",")}`
       ),
     queryKey: ["client-portal-multiple", submissionsIds],
     enabled: !!submissionsIds && submissionsIds.length > 1,

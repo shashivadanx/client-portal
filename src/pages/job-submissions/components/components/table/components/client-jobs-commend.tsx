@@ -32,7 +32,7 @@ export default function ClientJobsCommend({
   const { data, isLoading } = useQuery({
     queryKey: ["client-portal-jobs", search],
     queryFn: () =>
-      api.get<JobsResponse>(`/recruiter/clients-portal/jobs?search=${search}`),
+      api.get<JobsResponse>(`/client/dashboard/jobs?search=${search}`),
   });
 
   const jobs = data?.data?.data || []; // adjust shape if needed

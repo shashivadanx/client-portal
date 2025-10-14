@@ -2,6 +2,7 @@
 
 import { FileText, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import React, { useCallback } from "react"; // Import useCallback
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -9,14 +10,77 @@ import { SubmissionData } from "..";
 import { AnimatedTabs, Tab } from "@/components/ui/animated-tabs";
 import ResumeRender from "@/pages/submission-details/components/resume-render";
 
-export default function ResumeCard({ data }: { data: SubmissionData }) {
+export default function ResumeCard({
+  data,
+  setActiveTab,
+  activeTab,
+}: {
+  data: SubmissionData;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}) {
   const { submission, applicant } = data;
 
   const showResume = submission.config.resume_info;
   const showResumeEvaluation = submission.config.resume_evaluation_info;
-  const showInfo = submission.config.show_candidate_info;
 
-  // Map submission status to UI status
+  // Memoize the getSummary function to prevent it from being recreated on every render
+  const getSummary = useCallback(() => {
+    const analysis = applicant.resume_analysis;
+    if (!analysis) return "No resume analysis available.";
+
+    if (typeof analysis === "string") return analysis;
+    if (Array.isArray(analysis)) return analysis.join(". ");
+    if (typeof analysis === "object") return JSON.stringify(analysis);
+
+    return "No resume analysis available.";
+  }, [applicant.resume_analysis]);
+
+  // Memoize the tabs array to prevent it from being recreated on every render
+  const tabs: Tab[] = React.useMemo(
+    () =>
+      [
+        ...(showResume
+          ? [
+              {
+                label: "Resume",
+                value: "resume",
+                content: (
+                  <div className="h-[500px]">
+                    <ResumeRender
+                      className="h-[500px]"
+                      iframeClass="mx-4 h-[500px] rounded-xl"
+                      fileUrl={applicant.resume_url ?? ""}
+                    />
+                  </div>
+                ),
+              },
+            ]
+          : []),
+        ...(showResumeEvaluation
+          ? [
+              {
+                label: "Resume Analysis",
+                value: "resume_analysis",
+                content: (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <FileText className="h-4 w-4" aria-hidden />
+                      <span>Resume Summary</span>
+                    </div>
+                    <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+                      {getSummary()}
+                    </p>
+                  </div>
+                ),
+              },
+            ]
+          : []),
+      ].filter(Boolean),
+    [showResume, showResumeEvaluation, applicant.resume_url, getSummary]
+  );
+
+  // ... rest of the component is the same
   const getComponentStatus = (
     status: string
   ): "approved" | "in_progress" | "rejected" | "on_hold" => {
@@ -33,98 +97,6 @@ export default function ResumeCard({ data }: { data: SubmissionData }) {
   };
 
   const componentStatus = getComponentStatus(submission.status);
-
-  // Extract resume analysis summary
-  const getSummary = () => {
-    const analysis = applicant.resume_analysis;
-    if (!analysis) return "No resume analysis available.";
-
-    if (typeof analysis === "string") return analysis;
-    if (Array.isArray(analysis)) return analysis.join(". ");
-    if (typeof analysis === "object") return JSON.stringify(analysis);
-
-    return "No resume analysis available.";
-  };
-
-  const tabs: Tab[] = [
-    ...(showInfo
-      ? [
-          {
-            label: "Info",
-            value: "info",
-            content: (
-              <div className="grid gap-2 text-sm">
-                <div>
-                  <span className="font-medium">Job Title:</span>{" "}
-                  <span className="text-muted-foreground">
-                    {submission.job_title}
-                  </span>
-                </div>
-
-                {applicant.location && (
-                  <div>
-                    <span className="font-medium">Location:</span>{" "}
-                    <span className="text-muted-foreground">
-                      {applicant.location}
-                    </span>
-                  </div>
-                )}
-
-                {applicant.phone && (
-                  <div>
-                    <span className="font-medium">Phone:</span>{" "}
-                    <span className="text-muted-foreground">
-                      {applicant.phone}
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                  <span className="font-medium">Current Status:</span>{" "}
-                  <StatusText status={componentStatus} />
-                </div>
-              </div>
-            ),
-          },
-        ]
-      : []),
-    ...(showResume
-      ? [
-          {
-            label: "Resume",
-            value: "resume",
-            content: (
-              <div className="h-[500px]">
-                <ResumeRender
-                  className="h-[500px]"
-                  iframeClass="mx-4 h-[500px] rounded-xl"
-                  fileUrl={applicant.resume_url ?? ""}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
-    ...(showResumeEvaluation
-      ? [
-          {
-            label: "Resume Analysis",
-            value: "resume_analysis",
-            content: (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <FileText className="h-4 w-4" aria-hidden />
-                  <span>Resume Summary</span>
-                </div>
-                <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                  {getSummary()}
-                </p>
-              </div>
-            ),
-          },
-        ]
-      : []),
-  ].filter(Boolean);
 
   return (
     <Card className={cn("h-full")}>
@@ -144,12 +116,17 @@ export default function ResumeCard({ data }: { data: SubmissionData }) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <AnimatedTabs tabs={tabs} defaultValue="info" />
+        <AnimatedTabs
+          tabs={tabs}
+          defaultValue={activeTab}
+          onTabChange={setActiveTab}
+        />
       </CardContent>
     </Card>
   );
 }
 
+// ... StatusPill component remains the same
 function StatusPill({
   status,
 }: {
@@ -173,21 +150,4 @@ function StatusPill({
       : "Rejected";
 
   return <span className={pillClass}>{label}</span>;
-}
-
-function StatusText({
-  status,
-}: {
-  status: "approved" | "in_progress" | "rejected" | "on_hold";
-}) {
-  const label =
-    status === "approved"
-      ? "Approved"
-      : status === "in_progress"
-      ? "In Progress"
-      : status === "on_hold"
-      ? "On Hold"
-      : "Rejected";
-
-  return <span className="text-muted-foreground">{label}</span>;
 }

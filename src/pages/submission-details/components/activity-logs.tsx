@@ -211,6 +211,7 @@ export default function ActivityLogs() {
 
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
 
   const {
     data: activityData,
@@ -229,7 +230,7 @@ export default function ActivityLogs() {
       });
 
       const response = await api.get<HistoryLogResponse>(
-        `/recruiter/clients-portal/activity-logs/${submissionId}?${params.toString()}`
+        `/client/submissions/activity-logs/${submissionId}?${params.toString()}`
       );
 
       return response.data.data;
@@ -301,16 +302,23 @@ export default function ActivityLogs() {
     }
   }, [activityData, initialLoad]);
 
+  // Scroll to bottom when shouldScrollToBottom is true
+  useEffect(() => {
+    if (shouldScrollToBottom && scrollViewportRef.current) {
+      // Use requestAnimationFrame to ensure the DOM has updated
+      requestAnimationFrame(() => {
+        if (scrollViewportRef.current) {
+          scrollViewportRef.current.scrollTop =
+            scrollViewportRef.current.scrollHeight;
+          setShouldScrollToBottom(false);
+        }
+      });
+    }
+  }, [shouldScrollToBottom, allActivities]);
+
   const handleNewMessage = useCallback(() => {
     refetch().then(() => {
-      setTimeout(() => {
-        if (scrollViewportRef.current) {
-          scrollViewportRef.current.scrollTo({
-            top: scrollViewportRef.current.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, 100);
+      setShouldScrollToBottom(true);
     });
   }, [refetch]);
 
@@ -357,7 +365,7 @@ export default function ActivityLogs() {
           <div className="relative flex-1 overflow-hidden">
             <div
               ref={scrollViewportRef}
-              className="h-[900px] overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6"
+              className="flex h-full flex-col overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6"
             >
               {/* Load More Trigger */}
               <div ref={loadMoreRef} className="py-2">
@@ -440,12 +448,9 @@ export function HistoryInput({ onSuccess }: { onSuccess: () => void }) {
 
   const mutate = useMutation({
     mutationFn: (message: string) => {
-      return api.post(
-        `/recruiter/clients-portal/activity-logs/${submissionId}`,
-        {
-          message,
-        }
-      );
+      return api.post(`/client/submissions/activity-logs/${submissionId}`, {
+        message,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

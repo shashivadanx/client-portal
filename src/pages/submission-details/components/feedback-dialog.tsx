@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import api from "@/lib/apis";
-import { Star } from "lucide-react";
+import { Star, CheckCircle, XCircle, Clock, PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,14 +49,60 @@ const feedbackFormSchema = z.object({
 
 type FeedbackFormValues = z.infer<typeof feedbackFormSchema>;
 
+// Status messages configuration
+const getStatusMessages = (status?: string) => {
+  switch (status) {
+    case "approved":
+      return {
+        title: "Acceptance Feedback",
+        description: "Share your thoughts on why this candidate was accepted.",
+        icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+        placeholder: "Explain what impressed you about this candidate...",
+      };
+    case "rejected":
+      return {
+        title: "Rejection Feedback",
+        description:
+          "Provide constructive feedback on why this candidate was not selected.",
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+        placeholder: "Share specific reasons for the rejection...",
+      };
+    case "is_pending":
+      return {
+        title: "Feedback for Pending Status",
+        description:
+          "Add any notes or observations about this pending candidate.",
+        icon: <Clock className="h-5 w-5 text-yellow-500" />,
+        placeholder: "Add your thoughts about this candidate...",
+      };
+    case "on_hold":
+      return {
+        title: "Feedback for On Hold Status",
+        description: "Document any considerations for this candidate on hold.",
+        icon: <PauseCircle className="h-5 w-5 text-blue-500" />,
+        placeholder: "Note any reasons for putting this candidate on hold...",
+      };
+    default:
+      return {
+        title: "Submit Feedback",
+        description: "Share your thoughts about this candidate's submission.",
+        icon: <Star className="h-5 w-5 text-gray-500" />,
+        placeholder: "Share your detailed feedback...",
+      };
+  }
+};
+
 export default function FeedbackDialog({
+  status,
   open,
   onOpenChange,
 }: {
+  status?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const [wordCount, setWordCount] = useState(0);
+  const statusMessages = getStatusMessages(status);
 
   const form = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackFormSchema),
@@ -74,16 +120,21 @@ export default function FeedbackDialog({
 
   const { submissionId } = useParams<{ submissionId: string }>();
 
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (data: FeedbackFormValues) =>
-      api.post(`/recruiter/clients-portal/feedback-history/${submissionId}`, {
+      api.post(`/client/submissions/feedback-history/${submissionId}`, {
         content: data.comment,
         rating: data.rating,
+        status,
       }),
     onSuccess: () => {
       form.reset();
       setWordCount(0);
       toast.success("Feedback submitted successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["client-feedback-history", submissionId],
+      });
       onOpenChange(false);
     },
     onError: () => {
@@ -99,10 +150,11 @@ export default function FeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Submit Feedback</DialogTitle>
-          <DialogDescription>
-            Share your thoughts about this candidate's submission.
-          </DialogDescription>
+          <div className="flex items-center gap-2">
+            {statusMessages.icon}
+            <DialogTitle>{statusMessages.title}</DialogTitle>
+          </div>
+          <DialogDescription>{statusMessages.description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -145,7 +197,7 @@ export default function FeedbackDialog({
                   <FormLabel>Comments</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Share your detailed feedback..."
+                      placeholder={statusMessages.placeholder}
                       className="resize-none"
                       rows={4}
                       {...field}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import api from "@/lib/apis";
 import {
@@ -23,8 +23,11 @@ import FeedbackDialog from "./feedback-dialog";
 import {
   clientStatus,
   ClientStatus,
-  clientStatusOptions,
 } from "@/pages/job-submissions/utils/status-options";
+import {
+  ClientPortalStatus,
+  ClientStatusBadge,
+} from "@/pages/job-submissions/components/components/table/components/status-badge";
 
 export default function ResumeHeader({
   data,
@@ -32,16 +35,33 @@ export default function ResumeHeader({
   data: ClientPortalSubmissionData;
 }) {
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [dialogStatus, setDialogStatus] = useState<ClientStatus>(
+    data.submission.status
+  );
+  const queryClient = useQueryClient();
 
   const { submissionId } = useParams();
 
   const statusUpdateMutation = useMutation({
     mutationFn: (status: ClientStatus) =>
-      api.post("/recruiter/clients-portal/status", {
+      api.post("/client/submissions/status", {
         submission_ids: [submissionId],
         status,
       }),
-    onSuccess: () => toast.success("Status updated successfully"),
+    onSuccess: (_, status) => {
+      toast.success("Status updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["client-submissions", "client-submission", submissionId],
+      });
+      // Only open feedback dialog for approved or rejected status
+      if (
+        status === clientStatus.approved ||
+        status === clientStatus.rejected
+      ) {
+        setDialogStatus(status);
+        setFeedbackDialogOpen(true);
+      }
+    },
     onError: () => toast.error("Something went wrong. Please try again."),
   });
 
@@ -96,13 +116,9 @@ export default function ResumeHeader({
               <div className="mt-2">
                 <div className="flex items-center gap-3 text-gray-600">
                   <StampIcon size={18} className="text-gray-400" />
-                  <span className="text-sm capitalize">
-                    {
-                      clientStatusOptions.find(
-                        (option) => option.value === currentStatus
-                      )?.label
-                    }
-                  </span>
+                  <ClientStatusBadge
+                    status={currentStatus as ClientPortalStatus}
+                  />
                 </div>
               </div>
             </div>
@@ -168,8 +184,11 @@ export default function ResumeHeader({
 
                 <Button
                   variant="outline"
-                  onClick={() => setFeedbackDialogOpen(true)}
                   disabled={statusUpdateMutation.isPending}
+                  onClick={() => {
+                    setDialogStatus(currentStatus);
+                    setFeedbackDialogOpen(true);
+                  }}
                   className="flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="h-5 w-5" />
@@ -184,6 +203,7 @@ export default function ResumeHeader({
       <FeedbackDialog
         open={feedbackDialogOpen}
         onOpenChange={setFeedbackDialogOpen}
+        status={dialogStatus}
       />
     </div>
   );

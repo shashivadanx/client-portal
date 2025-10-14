@@ -67,9 +67,7 @@ export default function SubmissionDetails() {
   } = useQuery({
     queryKey: ["client-submission", submissionId],
     queryFn: () =>
-      api.get<SubmissionResponse>(
-        `/recruiter/clients-portal/submission/${submissionId}`
-      ),
+      api.get<SubmissionResponse>(`/client/submissions/${submissionId}`),
   });
 
   return (

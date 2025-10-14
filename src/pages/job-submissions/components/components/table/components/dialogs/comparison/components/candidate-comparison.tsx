@@ -1,7 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
+import { useState } from "react";
 import { SubmissionData } from "..";
 import CandidateCard from "./candidate-card";
 import { useClientPortalStore } from "@/pages/job-submissions/components/store/client-portal";
@@ -13,25 +12,22 @@ export default function ResumeComparison({
 }) {
   const { comparisonCols } = useClientPortalStore((state) => state);
 
-  // Take only the number of candidates needed
-  // const visibleCandidates = candidates?.slice
-  //   ? candidates.slice(0, comparisonCols)
-  //   : []
-
-  const gridColsClass =
-    comparisonCols === 2
-      ? "grid-rows-2"
-      : comparisonCols === 3
-      ? "grid-rows-3"
-      : "grid-rows-4";
+  // Shared tab state
+  const [activeTab, setActiveTab] = useState<string>("resume");
 
   return (
     <section aria-labelledby="resume-comparison-heading" className="space-y-4">
-      <div className={cn("grid gap-6", "grid-cols-2", gridColsClass)}>
+      <div
+        className={`grid gap-4 ${
+          comparisonCols > 1 ? `grid-cols-${comparisonCols}` : "grid-cols-1"
+        }`}
+      >
         {candidates.map((c) => (
           <CandidateCard
             key={`${c.submission.candidate_id}-${comparisonCols}`}
             data={c}
+            activeTab={activeTab} // pass down shared state
+            setActiveTab={setActiveTab} // pass setter to sync
           />
         ))}
       </div>

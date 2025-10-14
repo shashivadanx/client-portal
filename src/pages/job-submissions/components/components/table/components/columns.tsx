@@ -1,10 +1,10 @@
-import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { ColumnDef, Row } from "@tanstack/react-table";
+import { useNavigate } from "react-router";
 import { ClientPortalSubmission } from "..";
 import ActionDropdown from "./action-dropdown";
-import { useNavigate } from "react-router";
+import { ClientStatusBadge } from "./status-badge";
 
 export const candidateColumns: ColumnDef<ClientPortalSubmission>[] = [
   {
@@ -84,29 +84,7 @@ export const candidateColumns: ColumnDef<ClientPortalSubmission>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      switch (status) {
-        case "approved":
-          return <Badge className="capitalize">approved</Badge>;
-        case "rejected":
-          return (
-            <Badge variant="destructive" className="capitalize">
-              rejected
-            </Badge>
-          );
-        case "on_hold":
-          return (
-            <Badge variant="secondary" className="capitalize">
-              on hold
-            </Badge>
-          );
-        case "in_progress":
-        default:
-          return (
-            <Badge variant="outline" className="capitalize">
-              in progress
-            </Badge>
-          );
-      }
+      return <ClientStatusBadge status={status} />;
     },
     filterFn: (row, id, value) => {
       if (!value) return true;

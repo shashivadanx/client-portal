@@ -14,9 +14,7 @@ export type KPIResponse = {
 };
 
 export const fetchKPI = async (): Promise<KPIResponse> => {
-  const { data } = await apiClient.get<KPIResponse>(
-    "/recruiter/clients-portal/kpis"
-  );
+  const { data } = await apiClient.get<KPIResponse>("/client/dashboard/kpis");
   return data;
 };
 
@@ -25,7 +23,7 @@ export const fetchClientCharts = async ({
   size = 10,
   chart_type = "feedback-by-job",
 } = {}) => {
-  const res = await apiClient.get("/recruiter/clients-portal/charts", {
+  const res = await apiClient.get("/client/dashboard/charts", {
     params: { chart_type, page, size },
   });
   return res.data;
@@ -58,7 +56,7 @@ export const fetchJobs = async (
   limit: number
 ): Promise<JobsResponse> => {
   const response = await apiClient.get<JobsResponse>(
-    `/recruiter/clients-portal/jobs?page=${page}&limit=${limit}`
+    `/client/dashboard/jobs?page=${page}&limit=${limit}`
   );
   return response.data;
 };

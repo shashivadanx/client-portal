@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router"; // Assuming react-router-dom
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -51,7 +51,6 @@ export interface Tab {
   content?: React.ReactNode;
   href?: string;
   badge?: {
-    text: string | number;
     variant?: "default" | "secondary" | "outline" | "destructive";
     tooltip?: string;
   };
@@ -69,7 +68,7 @@ const transition = {
   type: "tween",
   ease: "easeOut",
   duration: 0.15,
-};
+} as const;
 
 const getHoverAnimationProps = (hoveredRect: DOMRect, navRect: DOMRect) => ({
   x: hoveredRect.left - navRect.left - 10,
@@ -94,9 +93,19 @@ export function AnimatedTabs({
     [initialTabIndex, 0]
   );
 
+  // --- FIX: This effect now correctly syncs with the parent without causing a loop ---
+  // It only runs when `defaultValue` or `tabs` change, not when the internal state changes.
+  React.useEffect(() => {
+    const newIndex = tabs.findIndex((tab) => tab.value === defaultValue);
+    if (newIndex !== -1) {
+      setSelectedTab([newIndex, 0]); // Update state to match the prop
+    }
+  }, [defaultValue, tabs]); // Dependency array is now correct and stable.
+
+  // This effect calls the parent's `onTabChange` handler when the internal state updates.
   React.useEffect(() => {
     if (onTabChange) {
-      onTabChange(tabs[selectedTabIndex].value);
+      onTabChange(tabs[selectedTabIndex]?.value);
     }
   }, [selectedTabIndex, onTabChange, tabs]);
 
@@ -220,7 +229,6 @@ function TabsList() {
                 ...getHoverAnimationProps(hoveredRect, navRect),
                 opacity: 0,
               }}
-              // @ts-ignore lsls
               transition={transition}
             />
           )}
@@ -242,7 +250,6 @@ function TabsList() {
                 x: `calc(${selectedRect.left - navRect.left - 9}px)`,
                 opacity: 1,
               }}
-              // @ts-ignore lsls
               transition={transition}
             />
           )}
@@ -274,7 +281,7 @@ function BadgeWithTooltip({
           : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
       )}
     >
-      {badge.text}
+      {badge.variant}
     </span>
   );
 

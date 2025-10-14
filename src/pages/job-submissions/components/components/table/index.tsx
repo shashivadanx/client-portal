@@ -115,7 +115,7 @@ export function ClientDataTable() {
     queryFn: async () => {
       const queryString = buildQueryParams();
       const response = await api.get<SubmissionResponse>(
-        `/recruiter/clients-portal/submissions?${queryString}`
+        `/client/submissions?${queryString}`
       );
       return response;
     },

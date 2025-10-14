@@ -1,4 +1,3 @@
-import React from "react";
 import { JobSection } from "./components";
 
 export default function Jobs() {

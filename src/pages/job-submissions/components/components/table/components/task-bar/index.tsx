@@ -31,7 +31,7 @@ export default function TaskBar({
 
   const statusUpdateMutation = useMutation({
     mutationFn: (status: ClientStatus) =>
-      api.post("/recruiter/clients-portal/status", {
+      api.post("/client/submissions/status", {
         submission_ids: selectedApplicants.map((row) => row.id),
         status,
       }),
